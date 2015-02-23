@@ -1,0 +1,23 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Taily stream</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        {{range .Lines}}
+            <p>{{.}}</p>
+        {{end}}
+    </body>
+    <script type="text/javascript">
+        var tail = new EventSource("/tail/{{.Id}}");
+        tail.onmessage = function(e) {
+            var line = document.createElement("p");
+            line.innerHTML = e.data
+            document.body.appendChild(line);
+        }
+    </script>
+</html>
