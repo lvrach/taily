@@ -7,17 +7,58 @@
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: rgba(214,214,214,1);
+        }
+        #lines {
+            margin-left: 10px;
+        }
+        p {
+            margin: 2px;
+            font-family: "Lucida Console", Monaco, monospace;
+            font-size: 17px;
+        }
+        #streaming {
+            width: 100%;
+            text-align: center;
+        }
+        .greped p {
+            display: none;
+        }
+        .greped p.contain {
+            display: block;
+        }
+    </style>
     <body>
+        <h1> ~ Taily  <small>stream</small></h1>
+        <div id="lines">
         {{range .Lines}}
             <p>{{.}}</p>
         {{end}}
+        </div>
+        <div id="streaming"> <a href="#follow">o O O o .</a> <div>
+
     </body>
     <script type="text/javascript">
         var tail = new EventSource("/tail/{{.Id}}");
+        var lines = document.getElementById("lines");
+        
         tail.onmessage = function(e) {
             var line = document.createElement("p");
             line.innerHTML = e.data
-            document.body.appendChild(line);
+            lines.appendChild(line);
+            if (window.location.hash.indexOf('follow') >= 0 ) {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
         }
+    </script>
+    <script type="text/javascript">
+
+        function grep(reg) {
+
+        }
+
     </script>
 </html>
