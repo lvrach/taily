@@ -60,7 +60,7 @@
     </script>
     <script type="text/javascript">
 
-        var grepy = window.location.hash.match('grep:(.*?)(?:,|$)')
+        var grepy = window.location.hash.match('grep~(.*?)(?:#|$)')
 
         if (grepy) {
             grep(RegExp(grepy[1]));
