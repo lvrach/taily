@@ -119,7 +119,9 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
             if err != nil {
                 return err
             }
-            fmt.Fprintf(w, string(data))
+            lines := strings.Split(string(data), "\n")
+            p := &StreamPage{Id: id, Lines: lines}
+            t.Execute(w, p)
 
             return nil
         })
