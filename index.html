@@ -16,7 +16,7 @@
             margin-left: 10px;
         }
         p {
-            margin: 2px;
+            margin: 3px;
             font-family: "Lucida Console", Monaco, monospace;
             font-size: 17px;
         }
@@ -29,6 +29,10 @@
         }
         .greped p.contain {
             display: block;
+        }
+        .greped p.contain span.hl {
+            background: #7e7e7e;
+            border-radius: 5px;
         }
     </style>
     <body>
@@ -56,8 +60,26 @@
     </script>
     <script type="text/javascript">
 
-        function grep(reg) {
+        var grepy = window.location.hash.match('grep:(.*?)(?:,|$)')
 
+        if (grepy) {
+            grep(RegExp(grepy[1]));
+        }
+
+        function grep(reg) {
+            var lines = document.getElementById('lines').getElementsByTagName('p');
+            var i, line, txt;
+            for( i=0; i< lines.length; i++ )
+            {
+                line = lines[i];
+                if ( line.innerHTML.match(reg) ) {
+                    line.classList.add("contain");
+                    txt = line.innerHTML;
+                    line.innerHTML = txt.replace(reg, '<span class="hl">$&</span>')
+                
+                }
+            }
+            document.getElementById('lines').classList.add("greped");
         }
 
     </script>
