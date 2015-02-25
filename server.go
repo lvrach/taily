@@ -85,7 +85,9 @@ func huuid() string {
 }
 
 func httpServer() {
-    http.HandleFunc("/tail/", sseHandler)
+    http.HandleFunc("/tail/", func(w http.ResponseWriter, r *http.Request) {
+                                 go sseHandler(w,r)
+                            });
     http.HandleFunc("/raw/", rawHandler)
     http.HandleFunc("/", httpHandler)
     http.ListenAndServe(":8080", nil)
@@ -189,7 +191,6 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
     }()
     
     tails.connect(id, tail)
-
     for {
 
         // Write to the ResponseWriter
