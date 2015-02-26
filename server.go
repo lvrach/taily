@@ -53,7 +53,7 @@ func huuid() string {
 
 func httpServer() {
     http.HandleFunc("/tail/", sseHandler);
-//    http.HandleFunc("/raw/", rawHandler)
+    http.HandleFunc("/raw/", rawHandler)
     http.HandleFunc("/", httpHandler)
     http.ListenAndServe(":8080", nil)
 }
@@ -75,9 +75,9 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rawHandler(w http.ResponseWriter, r *http.Request) {
-     id := string(r.URL.Path[5:])
-     stream := GetStream(id)
-     fmt.Fprintf(w, strings.Join(stream.Lines, ""))
+    id := string(r.URL.Path[5:])
+    stream := GetStream(id)
+    fmt.Fprintf(w, strings.Join(stream.Lines, "\n"))
 }
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
@@ -139,14 +139,20 @@ func handleConnection(conn net.Conn) {
 
     stream := NewStream(id)
     conn.Write([]byte(fmt.Sprintf("http://localhost:8080/%s \n", id)))
+    rest := "";
     for {
         n, err := conn.Read(buf[:])
         if err != nil {
             break
         }
-        stream.Push(string(buf[:n]));
+        lines := strings.Split(fmt.Sprint(rest, string(buf[:n])), "\n")
+        for _, line := range lines[:len(lines)-1] {
+            stream.Push(line);
+        }
+        rest = lines[len(lines)-1];
         fmt.Printf("%s", streams[id]);        
     }
+    stream.Push(rest);
     stream.Save()
     conn.Close()
 }
