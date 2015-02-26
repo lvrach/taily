@@ -4,7 +4,7 @@ import (
     "crypto/rand"
     "encoding/base64"
     "fmt"
-    lz4 "github.com/bkaradzic/go-lz4"
+//    lz4 "github.com/bkaradzic/go-lz4"
     "github.com/boltdb/bolt"
     "github.com/codahale/blake2"
     "html/template"
@@ -15,39 +15,6 @@ import (
     "sync"
 )
 
-var streams = make(map[string][]string)
-
-type StreamTail map[string][]chan []byte;
-
-var tails StreamTail = make(StreamTail);
-
-func (tails StreamTail) create(id string) {
-    tails[id] = make([]chan []byte, 0);
-}
-
-func (tails StreamTail) connect(id string, c chan []byte) {
-    tails[id] = append(tails[id], c)
-    fmt.Printf("connect id: %s connect (%d)\n", id, len(tails[id]))
-}
-
-func (tails StreamTail) disconnect(id string, d chan []byte) {
-    for i, c := range tails[id] {
-        if (c == d) {
-            tails[id] = append(tails[id][:i], tails[id][i+1:]...)
-        }
-    }
-
-    fmt.Printf("disconnect id: %s connect (%d)\n", id, len(tails[id]))
-
-}
-
-func (tails StreamTail) broadcast(id string, data []byte) {
-    fmt.Printf("broadcast to id: %d (%d)\n", id, len(tails[id]))
-    
-    for _, c := range tails[id] {
-        c <- data
-    }
-}
 
 var db *bolt.DB
 
@@ -86,7 +53,7 @@ func huuid() string {
 
 func httpServer() {
     http.HandleFunc("/tail/", sseHandler);
-    http.HandleFunc("/raw/", rawHandler)
+//    http.HandleFunc("/raw/", rawHandler)
     http.HandleFunc("/", httpHandler)
     http.ListenAndServe(":8080", nil)
 }
@@ -101,65 +68,16 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 
     id := string(r.URL.Path[1:])
 
-    if lines, ok := streams[id]; ok {
-        p := &StreamPage{Id: id, Lines: lines}
-        t.Execute(w, p)
-    } else {
-        err := db.View(func(tx *bolt.Tx) error {
-            bucket := tx.Bucket([]byte(id))
-            if bucket == nil {
-                http.NotFound(w, r)
-                fmt.Errorf("Bucket %s not found!", id)
-                return nil
-            }
-            var err error
+    stream := GetStream(id)
 
-            data := bucket.Get([]byte("body"))
-            data, err = lz4.Decode(nil, data)
-            if err != nil {
-                return err
-            }
-            lines := strings.Split(string(data), "\n")
-            p := &StreamPage{Id: id, Lines: lines}
-            t.Execute(w, p)
-
-            return nil
-        })
-
-        if err != nil {
-            log.Fatal(err)
-        }
-    }
+    p := &StreamPage{Id: id, Lines: stream.Lines}
+    t.Execute(w, p)
 }
 
 func rawHandler(w http.ResponseWriter, r *http.Request) {
-    id := string(r.URL.Path[5:])
-    if lines, ok := streams[id]; ok {
-        fmt.Fprintf(w, strings.Join(lines, ""))
-    } else {
-        err := db.View(func(tx *bolt.Tx) error {
-            bucket := tx.Bucket([]byte(id))
-            if bucket == nil {
-                http.NotFound(w, r)
-                fmt.Errorf("Bucket %s not found!", id)
-                return nil
-            }
-            var err error
-
-            data := bucket.Get([]byte("body"))
-            data, err = lz4.Decode(nil, data)
-            if err != nil {
-                return err
-            }
-            fmt.Fprintf(w, string(data))
-
-            return nil
-        })
-
-        if err != nil {
-            log.Fatal(err)
-        }
-    }
+     id := string(r.URL.Path[5:])
+     stream := GetStream(id)
+     fmt.Fprintf(w, strings.Join(stream.Lines, ""))
 }
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
@@ -178,19 +96,19 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
 
 
-    var tail = make(chan []byte)    
+    stream := GetStream(id)
+    tail := stream.Follow()
 
     defer func() {
-        tails.disconnect(id, tail)
+        stream.Unfollow(tail)
     }()
 
     notify := w.(http.CloseNotifier).CloseNotify()
     go func() {
         <-notify
-        tails.disconnect(id, tail)
+        stream.Unfollow(tail)
     }()
-    
-    tails.connect(id, tail)
+
     for {
         // Write to the ResponseWriter
         // Server Sent Events compatible
@@ -219,49 +137,16 @@ func handleConnection(conn net.Conn) {
     var buf [1024]byte
     id := huuid()
 
-    tails.create(id)
-    streams[id] = make([]string, 0)
+    stream := NewStream(id)
     conn.Write([]byte(fmt.Sprintf("http://localhost:8080/%s \n", id)))
     for {
         n, err := conn.Read(buf[:])
         if err != nil {
             break
         }
-        streams[id] = append(streams[id], string(buf[:n]))
-        fmt.Printf("%s", string(buf[:n]))
-        tails.broadcast(id, buf[:n])
-        
+        stream.Push(string(buf[:n]));
+        fmt.Printf("%s", streams[id]);        
     }
-    saveStream(id)
+    stream.Save()
     conn.Close()
-}
-
-func saveStream(id string) {
-    if lines, ok := streams[id]; ok {
-        data := []byte(strings.Join(lines, ""))
-
-        err := db.Update(func(tx *bolt.Tx) error {
-            bucket, err := tx.CreateBucketIfNotExists([]byte(id))
-            if err != nil {
-                return err
-            }
-
-            data, err := lz4.Encode(nil, data)
-            if err != nil {
-                return err
-            }
-
-            err = bucket.Put([]byte("body"), data)
-
-            if err != nil {
-                return err
-            }
-            return nil
-        })
-        if err != nil {
-            log.Fatal(err)
-        } else {
-            delete(streams, id)
-        }
-    }
 }
