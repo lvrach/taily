@@ -60,7 +60,6 @@ func GetStream(id string) *LongStream {
 
 func (stream *LongStream) Push(line string) {
 	stream.Lines = append(stream.Lines, line);
-    fmt.Printf("huid: %s\n", stream);
     for _, c := range stream.Tails {
         c <- []byte(line)
     }

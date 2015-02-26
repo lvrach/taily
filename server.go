@@ -150,7 +150,6 @@ func handleConnection(conn net.Conn) {
             stream.Push(line);
         }
         rest = lines[len(lines)-1];
-        fmt.Printf("%s", streams[id]);        
     }
     stream.Push(rest);
     stream.Save()
