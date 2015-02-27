@@ -11,14 +11,29 @@
         body {
             background: #1e1e1e;
             color: rgba(214,214,214,1);
-        }
-        #lines {
             margin-left: 10px;
+        }
+        .grep-box {
+            font-size: 19px;
+            font-family: "Lucida Console", Monaco, monospace;
+
+        }
+        #grep-input {
+            background: #1e1e1e;
+            color: rgba(214,214,214,1);
+            width: 100px;
+            height: 23px;
+            font-size: 19px;
+            border-left: 0px;
+            border-right: 0px;
+            border-top: 0px;
+            border-bottom-width: 1px;
         }
         p {
             margin: 3px;
             font-family: "Lucida Console", Monaco, monospace;
             font-size: 17px;
+            height: 20px;
         }
         #streaming {
             width: 100%;
@@ -36,7 +51,11 @@
         }
     </style>
     <body>
-        <h1> ~ Taily  <small>stream</small></h1>
+        <h1> ~ Taily  <small>stream</small> </h1>
+        <div class="grep-box"> 
+            $ grep <input id="grep-input" type="input" placeholder="regex">
+        </div>
+        <br/>
         <div id="lines">
         {{range .Lines}}
             <p>{{.}}</p>
@@ -66,14 +85,39 @@
             grep(RegExp(grepy[1]));
         }
 
+
+        var $grepInput = document.getElementById('grep-input');
+        $grepInput.addEventListener('keypress', function (event) {
+            if (event.keyIdentifier == 'Enter') {
+                ungrep();
+                console.log(event.target.value);
+                grep(RegExp(event.target.value));
+                window.location.hash = '#grep~'+event.target.value;
+            }
+        });
+
+        function ungrep() {
+            document.getElementById('lines').classList.remove("greped");
+            var selectedLines = document
+                .getElementById('lines')
+                .getElementsByClassName('contain')
+            while( selectedLines[0] ) {
+                console.log(selectedLines[0]);
+                selectedLines[0].innerHTML = selectedLines[0].innerHTML
+                    .replace(/<span class="hl">(.*?)<\/span>/g, '$1')
+                selectedLines[0].classList.remove('contain')
+
+            }
+        }
+
         function grep(reg) {
             var lines = document.getElementById('lines').getElementsByTagName('p');
             var i, line, txt;
-            for( i=0; i< lines.length; i++ )
+            for( i=0; i < lines.length; i++ )
             {
                 line = lines[i];
                 if ( line.innerHTML.match(reg) ) {
-                    line.classList.add("contain");
+                    line.classList.add('contain');
                     txt = line.innerHTML;
                     line.innerHTML = txt.replace(reg, '<span class="hl">$&</span>')
                 
