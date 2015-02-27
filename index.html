@@ -70,7 +70,7 @@
         
         tail.onmessage = function(e) {
             var line = document.createElement("p");
-            line.innerHTML = e.data
+            line.innerText = e.data
             lines.appendChild(line);
             if (window.location.hash.indexOf('follow') >= 0 ) {
                 window.scrollTo(0, document.body.scrollHeight);
