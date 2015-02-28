@@ -33,7 +33,7 @@
             margin: 3px;
             font-family: "Lucida Console", Monaco, monospace;
             font-size: 17px;
-            height: 20px;
+            min-height: 20px;
         }
         #streaming {
             width: 100%;
@@ -65,36 +65,60 @@
 
     </body>
     <script type="text/javascript">
+    
+        function safe_tags(str) {
+            return str
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;') ;
+        }
+
+
         var tail = new EventSource("/tail/{{.Id}}");
         var lines = document.getElementById("lines");
-        
+        var ggrep = undefined;
+
         tail.onmessage = function(e) {
-            var line = document.createElement("p");
-            line.innerText = e.data
-            lines.appendChild(line);
+            var $p = document.createElement("p");
+            var line = e.data;
+            if ( ggrep && line.match(ggrep) ) {
+                line.replace(ggrep, function () {
+                    var match = arguments[0];
+                    var offset = arguments[arguments.length - 2];
+                    var string = arguments[arguments.length - 1];
+                    var $_0 = string.slice(0, offset);
+                    var $_1 = string.slice(offset+match.length);
+                    line = safe_tags($_0) + '<span class="hl">' + safe_tags(match) + '</span>' + safe_tags($_1);
+                })
+                $p.classList.add("contain");
+            }
+            else {
+                return;
+            }
+
+            $p.innerHTML = line;
+
+            lines.appendChild($p);
             if (window.location.hash.indexOf('follow') >= 0 ) {
                 window.scrollTo(0, document.body.scrollHeight);
             }
         }
-    </script>
-    <script type="text/javascript">
 
-        var grepy = window.location.hash.match('grep~(.*?)(?:#|$)')
+        var grepy = window.location.hash.match('grep~(.*?)(?:#|$)');
 
         if (grepy) {
             grep(RegExp(grepy[1]));
         }
 
-
-        var $grepInput = document.getElementById('grep-input');
-        $grepInput.addEventListener('keypress', function (event) {
-            if (event.keyIdentifier == 'Enter') {
-                ungrep();
-                console.log(event.target.value);
-                grep(RegExp(event.target.value));
-                window.location.hash = '#grep~'+event.target.value;
-            }
-        });
+        document
+            .getElementById('grep-input')
+            .addEventListener('keypress', function (event) {
+                if (event.keyIdentifier == 'Enter') {
+                    ungrep();
+                    grep(RegExp(event.target.value));
+                    window.location.hash = '#grep~'+event.target.value;
+                }
+            });
 
         function ungrep() {
             document.getElementById('lines').classList.remove("greped");
@@ -111,6 +135,7 @@
         }
 
         function grep(reg) {
+            ggrep = reg;
             var lines = document.getElementById('lines').getElementsByTagName('p');
             var i, line, txt;
             for( i=0; i < lines.length; i++ )
@@ -119,12 +144,10 @@
                 if ( line.innerHTML.match(reg) ) {
                     line.classList.add('contain');
                     txt = line.innerHTML;
-                    line.innerHTML = txt.replace(reg, '<span class="hl">$&</span>')
-                
+                    line.innerHTML = txt.replace(reg, '<span class="hl">$&</span>');                
                 }
             }
             document.getElementById('lines').classList.add("greped");
         }
-
     </script>
 </html>
