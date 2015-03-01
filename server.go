@@ -52,9 +52,10 @@ func huuid() string {
 }
 
 func httpServer() {
-    http.HandleFunc("/tail/", sseHandler);
+    http.HandleFunc("/tail/", sseHandler)
     http.HandleFunc("/raw/", rawHandler)
-    http.HandleFunc("/", httpHandler)
+    http.HandleFunc("/view/", viewerHandler)
+    http.Handle("/", http.FileServer(http.Dir("./static")))
     http.ListenAndServe(":8080", nil)
 }
 
@@ -63,10 +64,9 @@ type StreamPage struct {
     Lines []string
 }
 
-func httpHandler(w http.ResponseWriter, r *http.Request) {
-    t, _ := template.ParseFiles("index.html")
-
-    id := string(r.URL.Path[1:])
+func viewerHandler(w http.ResponseWriter, r *http.Request) {
+    t, _ := template.ParseFiles("views/viewer.html")
+    id := string(r.URL.Path[len("/view/"):])
 
     stream := GetStream(id)
 
@@ -120,7 +120,7 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func netServer() {
-    ln, err := net.Listen("tcp", ":9999")
+    ln, err := net.Listen("tcp", ":4444")
     if err != nil {
         panic(err)
     }
@@ -138,7 +138,7 @@ func handleConnection(conn net.Conn) {
     id := huuid()
 
     stream := NewStream(id)
-    conn.Write([]byte(fmt.Sprintf("http://localhost:8080/%s \n", id)))
+    conn.Write([]byte(fmt.Sprintf("http://localhost:8080/view/%s \n", id)))
     rest := "";
     for {
         n, err := conn.Read(buf[:])

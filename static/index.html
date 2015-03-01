@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>TailBin</title>
+        <meta name="description" content="Easily store & monitor your logs. Using unix tools like netcat & tail -f.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: white;
+            margin-left: 15px;
+            font-size: 18px;
+            font-weight: normal;
+            font-family: 'Helvetica Neue', Helvetica, 'Segoe UI', Arial, freesans, sans-serif;
+        }
+        h3 {
+            margin-top: 40px;
+        }
+        .logo {
+            height: 50px;
+            width: 120px;
+            font-size: 25px;
+            float: left;
+            color: rgba(214,214,214,1);
+        }
+        .code {
+            font-family: "Lucida Console", Monaco, monospace;
+            border-left: solid 5px rgba(214,214,214,1);
+            padding-left: 10px;
+            padding: 5px;
+            margin: 5px;
+            display: inline;
+            background-color: grey;
+        }
+        .desc {
+            min-width: 600px;
+            max-width: 800px;
+            width: 80%;
+        }
+
+    </style>
+    <body>
+        <div class="logo">$_~>www.</div><h1>TailBin <small>beta</small></h1>
+        <h2> Easily store & monitor your logs. </h2>
+        <div class="desc"> 
+
+            <b> NOTE: </b> This is an early beta version.
+
+            <p>Use standar unix tools to stream your logs into our service.</p>
+            <p>You can then monitor your service from a browser, or share them with others.</p>
+            
+            <h3> Using netcat </h3>
+            <p>The following command will open a tcp connection with our server.</p>
+            <p>Our server will respond with a url that directs you to a unique page for your stream.</p>
+            <p>Everything you write, will apear in there.</p>
+            <div class="code"> nc tailbin.com 4444 </div>
+            
+            <h3> Paste a file </h3>
+            <p> You could share a file from your terminal by just pipelining cat output to the previous command.</p>
+            <div class="code"> cat foo.txt | nc tailbin.com 4444 </div>
+
+            <h3> tail -f your logs </h3>
+            <p> Open a log file with tail -f and pipeline it to the netcat command.</p>
+            <p> Every new line added to the file will be pushed to the server.</p>
+            <p> Also notice that the page is being updated in realtime. </p>
+            <div class="code"> tail -f /var/log/apache2/access.log | nc tailbin.com 4444 </div>
+
+            <h3> Monitor your server </h3>
+            <div>Here some tricks you can use to monitor the health of your servers:</div>
+            <h4>Uptime & cpu load:</h4>
+            <div class="code"> while true; do uptime;  sleep 2 ; done; | nc tailbin.com 4444 </div>
+
+            <h4>Memory usage:</h4>
+            <div class="code"> while true; do free -h; sleep 10; done; | nc tailbin.com 4444 </div>
+            <h4>Hard disk usage:</h4>
+            <div class="code"> while true; do df -h;   sleep 10; done; | nc tailbin.com 4444 </div>
+
+        </div>
+        
+    </body>
+
+</html>
