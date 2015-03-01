@@ -93,7 +93,7 @@
                 $p.classList.add("contain");
             }
             else {
-                return;
+                line = safe_tags(line);
             }
 
             $p.innerHTML = line;
