@@ -71,12 +71,12 @@
             <h3> Monitor your server </h3>
             <div>Here some tricks you can use to monitor the health of your servers:</div>
             <h4>Uptime & cpu load:</h4>
-            <div class="code"> while true; do uptime;  sleep 2 ; done; | nc tailbin.com 4444 </div>
+            <div class="code"> (while true; do uptime;  sleep 2 ; done;) | nc tailbin.com 4444 </div>
 
             <h4>Memory usage:</h4>
-            <div class="code"> while true; do free -h; sleep 10; done; | nc tailbin.com 4444 </div>
+            <div class="code"> (while true; do free -h; sleep 10; done;) | nc tailbin.com 4444 </div>
             <h4>Hard disk usage:</h4>
-            <div class="code"> while true; do df -h;   sleep 10; done; | nc tailbin.com 4444 </div>
+            <div class="code"> (while true; do df -h;   sleep 10; done;) | nc tailbin.com 4444 </div>
 
         </div>
         
